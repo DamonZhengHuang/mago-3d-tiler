@@ -1,0 +1,16 @@
+version: '3.8'
+name: mago-3d-tiler
+services:
+  mago-tiler:
+    image: gaia3d/mago-3d-tiler:latest
+    pull_policy: always
+    platform: linux/amd64
+    container_name: mago-tiler
+    volumes:
+      - D:/data/mago-3d-tiler/release-sample:/input
+      - E:/data/mago-server/output:/output
+    command: >
+      --input /input/B03-wangsuk2-geojson
+      --output /output/B03-wangsuk2-geojson
+      --temp /work/temp
+      --geoid EGM96

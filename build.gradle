@@ -1,0 +1,129 @@
+subprojects {
+    group "com.gaia3d"
+    version "1.15.6"
+    apply plugin: 'java'
+    project.ext.lwjglVersion = "3.3.6"
+
+    repositories {
+        maven { url "https://repo.osgeo.org/repository/release/" }
+        mavenCentral()
+    }
+
+    dependencies {
+        /* Lombok */
+        compileOnly "org.projectlombok:lombok:1.18.30"
+        annotationProcessor "org.projectlombok:lombok:1.18.30"
+
+        /* Logging */
+        implementation 'org.slf4j:slf4j-api:1.7.25'
+        implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+        implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+        implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
+
+        /* Jackson for JSON and XML processing */
+        implementation "com.fasterxml.jackson.core:jackson-core:2.15.2"
+        implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.2"
+
+        /* Math library */
+        implementation "org.joml:joml:1.10.8"
+
+        /* Geospatial libraries */
+        implementation "org.locationtech.proj4j:proj4j:1.4.1"
+        implementation "org.locationtech.proj4j:proj4j-epsg:1.4.1"
+
+        implementation platform("org.geotools:gt-bom:34.0")
+        implementation "org.geotools:gt-shapefile"
+        implementation "org.geotools:gt-geotiff"
+        implementation "org.geotools:gt-geoparquet"
+        implementation "org.geotools:gt-geopkg"
+        implementation "org.geotools:gt-geojson"
+        implementation "org.geotools:gt-coverage"
+        implementation "org.geotools:gt-main"
+        implementation "org.geotools:gt-image"
+        implementation "org.geotools:gt-grid"
+        implementation "org.geotools:gt-process"
+        implementation "org.geotools:gt-process-raster"
+        implementation "org.geotools:gt-process-feature"
+        implementation "org.geotools:gt-epsg-hsql"
+        implementation "com.github.jai-imageio:jai-imageio-core:1.4.0"
+        implementation "org.jdom:jdom2:2.0.6.1"
+
+        /* Apache commons */
+        implementation 'commons-logging:commons-logging:1.2'
+        implementation 'commons-io:commons-io:2.11.0'
+        implementation 'commons-cli:commons-cli:1.5.0'
+        implementation 'commons-collections:commons-collections:3.2.2'
+        implementation 'org.apache.commons:commons-text:1.10.0'
+
+        /* Development libraries */
+        testCompileOnly "org.projectlombok:lombok:1.18.30"
+        testAnnotationProcessor "org.projectlombok:lombok:1.18.30"
+
+        testImplementation platform("org.junit:junit-bom:5.10.0")
+        testImplementation "org.junit.jupiter:junit-jupiter-api"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+        testRuntimeOnly  "org.junit.platform:junit-platform-launcher"
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+}
+
+project(':mago-common') {
+    // Common module
+}
+
+project(':mago-io') {
+    dependencies {
+        implementation project(':mago-common')
+    }
+}
+
+project(':mago-tiler') {
+    dependencies {
+        implementation project(':mago-common')
+        implementation project(':mago-io')
+        implementation project(':mago-tiler-extension')
+    }
+}
+
+// Extension module build configuration
+project(':mago-tiler-extension') {
+    dependencies {
+        implementation project(':mago-common')
+    }
+}
+
+// Extension module build configuration
+project(':mago-tiler-non-extension') {
+    dependencies {
+        implementation project(':mago-common')
+    }
+}
+
+tasks.register('release') {
+    dependsOn(':mago-tiler:test')
+    dependsOn(':mago-tiler:javadoc')
+    dependsOn(':mago-tiler:jib')
+}
+
+tasks.register('all-javadoc', Javadoc) {
+    group = 'Documentation'
+    description = 'Generates Javadoc for mago-3d-tiler module.'
+
+    def includedProjects = [
+            project(':mago-tiler'),
+            project(':mago-common'),
+            project(':mago-io'),
+            project(':mago-tiler-extension')
+    ]
+    source = files(includedProjects.collect { it.sourceSets.main.allJava })
+    classpath = files(includedProjects.collect { it.sourceSets.main.compileClasspath })
+    destinationDir = file("/docs/")
+    options.encoding = 'UTF-8'
+    options.memberLevel = JavadocMemberLevel.PUBLIC
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
